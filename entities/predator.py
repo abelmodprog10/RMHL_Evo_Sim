@@ -1,19 +1,40 @@
+import math
 from core import config
 from entities.agent import Agent
-import random
 
 class Predator(Agent):
     def __init__(self, genome=None):
         super().__init__(genome)
         self.type = "Predator"
         self.energy = config.MAX_ENERGY // 2
-        self.health = 120  # maybe predators have more health?
+        self.health = 150  # Predators might have higher base health
 
     def step(self):
-        dx, dy = random.choice(self.directions)
-        new_x = self.x + dx
-        new_y = self.y + dy
-        # Check boundaries
-        if 0 <= new_x < self.world.width and 0 <= new_y < self.world.height:
-            if not self.world.get_entities_at(new_x, new_y):
-                self.world.move_entity(self, new_x, new_y)
+        if self.world is None:
+            return
+
+        # Call parent step method to handle energy loss, damage, reproduction, movement, and vision
+        super().step()
+
+        # If the agent died from energy depletion or other causes, don't continue
+        if self.world is None:
+            return
+
+        # Hunt for prey at current position
+        self.hunt_prey()
+
+    def hunt_prey(self):
+        hunt_range = 15
+        prey_list = [
+            e for e in self.world.get_entities_in_radius(self.x, self.y, hunt_range)
+            if getattr(e, 'type', None) == "Prey"
+        ]
+
+        if not prey_list:
+            return
+
+        closest_prey = min(prey_list, key=lambda p: math.hypot(p.x - self.x, p.y - self.y))
+        closest_prey.take_damage(50)
+
+        if closest_prey.world is None:  # Prey died from the attack
+            self.eat(config.PREY_ENERGY_VALUE)

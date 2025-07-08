@@ -6,31 +6,28 @@ from entities.prey import Prey
 from entities.predator import Predator
 
 
+from display.pygame_display import PygameDisplay
+
 def main():
-    w = World(config.WORLD_WIDTH, config.WORLD_HEIGHT)  # Use World directly
+    w = World(config.WORLD_WIDTH, config.WORLD_HEIGHT)
 
     plants = [Plant() for _ in range(config.N_PLANTS)]
     preys = [Prey() for _ in range(config.N_PREY)]
     predators = [Predator() for _ in range(config.N_PREDATORS)]
 
-    # Add all entities to the world
-    for plant in plants:
-        w.add_entity(plant)
-    for prey in preys:
-        w.add_entity(prey)
-    for predator in predators:
-        w.add_entity(predator)
+    agents = preys + predators
 
-    # Combine all agents for stepping
-    agents = plants + preys + predators
+    for entity in plants + agents:
+        w.add_entity(entity)
 
-    steps = 10
-    for step in range(steps):
-        print(f"Step {step + 1}")
+    display = PygameDisplay(w)
+
+    while True:
         for agent in agents:
             agent.step()
         w.step()
-        w.display()  # show the grid after each step
+        display.handle_events()
+        display.draw()
 
 if __name__ == "__main__":
     main()
